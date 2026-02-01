@@ -14,6 +14,9 @@ build/
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# Coverage reports
+coverage.html
+
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
