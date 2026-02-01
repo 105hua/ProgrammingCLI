@@ -49,11 +49,7 @@ func NewConversationScreen() {
 
 			// Get response from OpenRouter API and render it.
 			response := GetCompletion(userInput, nil, config.ApiKey)
-			renderer, err := CreateRenderer()
-			if err != nil {
-				panic(err)
-			}
-			rendered, err := renderer.Render(response.Content)
+			rendered, err := RenderMarkdown(response.Content)
 			if err != nil {
 				panic(err)
 			}

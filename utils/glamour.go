@@ -1,22 +1,21 @@
 package utils
 
 import (
-	"github.com/charmbracelet/glamour"
-	"github.com/charmbracelet/glamour/styles"
+	"os"
+
+	markdown "github.com/MichaelMure/go-term-markdown"
+	"golang.org/x/term"
 )
 
-func CreateRenderer() (*glamour.TermRenderer, error) {
-	style := styles.DarkStyleConfig
-	bg := "#3a3a3a"
-	style.CodeBlock.BackgroundColor = &bg
-
-	renderer, err := glamour.NewTermRenderer(
-		glamour.WithStandardStyle("dark"),
-		glamour.WithStyles(style),
-	)
+func RenderMarkdown(content string) (string, error) {
+	width, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
-		return nil, err
+		width = 80 // Default width fallback
 	}
 
-	return renderer, nil
+	// Render the markdown
+	// source, width, leftPadding
+	result := markdown.Render(content, width, 0)
+
+	return string(result), nil
 }
