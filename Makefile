@@ -30,42 +30,17 @@ clean:
 	@rm -rf $(BUILD_DIR)
 	@echo Clean complete
 
-# Run tests
+# Test
 test:
-	@echo Running tests...
-	@go test ./...
-
-# Run tests with verbose output
-test-verbose:
-	@echo Running tests with verbose output...
-	@go test -v ./...
-
-# Run tests with coverage
-test-coverage:
-	@echo Running tests with coverage...
-	@go test -cover ./...
-
-# Run tests with detailed coverage report
-test-coverage-report:
-	@echo Generating coverage report...
-	@go test -coverprofile=coverage.out ./...
-	@go tool cover -html=coverage.out -o coverage.html
-	@echo Coverage report generated: coverage.html
-
-# Docker-based testing targets
-docker-test:
-	@echo Running tests in Docker container...
 	@docker compose run --rm test
 
-docker-test-coverage:
-	@echo Running tests with coverage in Docker container...
+test-coverage:
 	@docker compose run --rm test-coverage
 
-docker-test-race:
-	@echo Running tests with race detection in Docker container...
+test-race:
 	@docker compose run --rm test-race
 
-docker-clean:
+clean-docker:
 	@echo Cleaning Docker images and volumes...
 	@docker compose down -v
 	@docker rmi programmingcli-test 2>/dev/null || true
