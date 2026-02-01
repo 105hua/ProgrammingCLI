@@ -9,53 +9,136 @@ import (
 	"github.com/fatih/color"
 )
 
-func DisplayTitle() {
-	robotColor := color.New(color.FgHiYellow).SprintFunc()
-	lineColor := color.New(color.FgYellow).SprintFunc()
-	boldText := color.New(color.Bold).SprintFunc()
+// Commands - user input commands
+const (
+	CmdExit = "/exit"
+	CmdNew  = "/new"
+)
 
-	fmt.Println(lineColor(strings.Repeat("─", 100)))
-	fmt.Println(robotColor("     ▗▄▓▓▄▖"))
-	fmt.Println(robotColor("    ▗▓▀  ▀▓▖"))
-	fmt.Println(robotColor("    ▐▌ ██ ▐▌      ") + boldText("Programming CLI | v0.0.1"))
-	fmt.Println(robotColor("    ▝▓▄  ▄▓▘"))
-	fmt.Println(robotColor("     ▝▀▓▓▀▘"))
-	fmt.Println(lineColor(strings.Repeat("─", 100)))
+// ANSI escape sequences for terminal control
+const (
+	AnsiClearScreen = "\033[H\033[2J"
+)
+
+// Display constants
+const (
+	TitleLineWidth = 100
+	AppVersion     = "v0.0.1"
+)
+
+// Pre-configured color functions for consistent styling
+var (
+	robotColor = color.New(color.FgHiYellow).SprintFunc()
+	lineColor  = color.New(color.FgYellow).SprintFunc()
+	boldText   = color.New(color.Bold).SprintFunc()
+	aiColor    = color.New(color.FgGreen, color.Bold).SprintFunc()
+	errorColor = color.New(color.FgRed, color.Bold).SprintFunc()
+)
+
+// ClearScreen clears the terminal screen.
+func ClearScreen() {
+	fmt.Print(AnsiClearScreen)
 }
 
-func NewConversationScreen() {
-	// Clear screen.
-	fmt.Print("\033[H\033[2J")
-	// Display title screen.
-	DisplayTitle()
+// DisplayTitle prints the application header with ASCII art.
+func DisplayTitle() {
+	fmt.Println(lineColor(strings.Repeat("─", TitleLineWidth)))
+	fmt.Println(robotColor("     ▗▄▓▓▄▖"))
+	fmt.Println(robotColor("    ▗▓▀  ▀▓▖"))
+	fmt.Println(robotColor("    ▐▌ ██ ▐▌      ") + boldText("Programming CLI | "+AppVersion))
+	fmt.Println(robotColor("    ▝▓▄  ▄▓▘"))
+	fmt.Println(robotColor("     ▝▀▓▓▀▘"))
+	fmt.Println(lineColor(strings.Repeat("─", TitleLineWidth)))
+}
 
-	// Load config once
-	config := LoadConfig()
+// CommandResult represents the outcome of processing a user command.
+type CommandResult int
 
-	// Open first text box.
-	p := tea.NewProgram(menus.InitialModel())
-	finalModel, err := p.Run()
+const (
+	CommandContinue CommandResult = iota // Continue the conversation loop
+	CommandExit                          // Exit the conversation
+	CommandNew                           // Start a new conversation
+	CommandMessage                       // Process as a message to AI
+)
+
+// handleCommand processes user input and determines the appropriate action.
+func handleCommand(input string) CommandResult {
+	switch input {
+	case "", CmdExit:
+		return CommandExit
+	case CmdNew:
+		return CommandNew
+	default:
+		return CommandMessage
+	}
+}
+
+// displayAIResponse sends a message to the AI and displays the response.
+// Returns an error if the API call or rendering fails.
+func displayAIResponse(userInput string, config Config) error {
+	fmt.Printf("%s ", aiColor("\nAI:\n"))
+
+	response := GetCompletion(userInput, nil, config.ApiKey)
+	rendered, err := RenderMarkdown(response.Content)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to render markdown: %w", err)
 	}
 
-	// Get the user input from the final model state
-	if m, ok := finalModel.(menus.Model); ok {
+	fmt.Printf("%s\n\n", rendered)
+	return nil
+}
+
+// displayError shows a user-friendly error message.
+func displayError(message string) {
+	fmt.Printf("\n%s %s\n\n", errorColor("Error:"), message)
+}
+
+// runInputLoop handles the main conversation input loop.
+// Returns true if a new conversation should be started, false to exit.
+func runInputLoop(config Config) bool {
+	for {
+		p := tea.NewProgram(menus.InitialModel())
+		finalModel, err := p.Run()
+		if err != nil {
+			displayError(fmt.Sprintf("Input error: %v", err))
+			return false
+		}
+
+		m, ok := finalModel.(menus.Model)
+		if !ok {
+			displayError("Failed to get user input")
+			return false
+		}
+
 		userInput := m.GetValue()
-		if userInput != "" {
-			// Send to OpenAI API and get response
-			aiColor := color.New(color.FgGreen, color.Bold).SprintFunc()
-			fmt.Printf("%s ", aiColor("\nAI:\n"))
 
-			// Get response from OpenRouter API and render it.
-			response := GetCompletion(userInput, nil, config.ApiKey)
-			rendered, err := RenderMarkdown(response.Content)
-			if err != nil {
-				panic(err)
+		switch handleCommand(userInput) {
+		case CommandExit:
+			return false
+		case CommandNew:
+			return true
+		case CommandMessage:
+			if err := displayAIResponse(userInput, config); err != nil {
+				displayError(err.Error())
+				// Continue the loop instead of crashing
 			}
+		}
+	}
+}
 
-			// Print rendered content.
-			fmt.Printf("%s\n\n", rendered)
+// NewConversation starts and manages a new CLI conversation session.
+func NewConversation() {
+	config := LoadConfig()
+
+	for {
+		// Reset conversation state for new conversation
+		ResetConversation()
+
+		ClearScreen()
+		DisplayTitle()
+
+		if !runInputLoop(config) {
+			return
 		}
 	}
 }

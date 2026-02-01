@@ -10,5 +10,5 @@ func main() {
 	_ = config                   // Initialize application with loaded config.
 
 	// Start a new conversation immediately.
-	utils.NewConversationScreen()
+	utils.NewConversation()
 }
