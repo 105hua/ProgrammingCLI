@@ -1,22 +1,6 @@
-# Use golang alpine for smaller image size
 FROM golang:1.25-alpine
-
-# Install git (needed for some Go modules)
-RUN apk add --no-cache git
-
-# Set working directory
 WORKDIR /app
-
-# Copy go mod files first for better layer caching
-# This layer will only rebuild when dependencies change
 COPY go.mod go.sum ./
-
-# Download dependencies (this layer is cached until go.mod/go.sum changes)
 RUN go mod download && go mod verify
-
-# Copy source code
-# This layer rebuilds when any source file changes
 COPY . .
-
-# Run tests by default
 CMD ["go", "test", "-v", "./..."]
