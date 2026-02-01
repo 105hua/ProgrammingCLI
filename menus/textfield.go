@@ -57,3 +57,8 @@ func (m Model) View() string {
 		"(esc to quit)",
 	) + "\n"
 }
+
+// GetValue returns the current value of the text input
+func (m Model) GetValue() string {
+	return m.textInput.Value()
+}

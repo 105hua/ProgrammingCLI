@@ -28,9 +28,31 @@ func NewConversationScreen() {
 	fmt.Print("\033[H\033[2J")
 	// Display title screen.
 	DisplayTitle()
+
+	// Load config once
+	config := LoadConfig()
+
 	// Open first text box.
 	p := tea.NewProgram(menus.InitialModel())
-	if _, err := p.Run(); err != nil {
+	finalModel, err := p.Run()
+	if err != nil {
 		panic(err)
+	}
+
+	// Get the user input from the final model state
+	if m, ok := finalModel.(menus.Model); ok {
+		userInput := m.GetValue()
+		if userInput != "" {
+			// Display user message
+			userColor := color.New(color.FgCyan, color.Bold).SprintFunc()
+			fmt.Printf("\n%s %s\n\n", userColor("You:"), userInput)
+
+			// Send to OpenAI API and get response
+			aiColor := color.New(color.FgGreen, color.Bold).SprintFunc()
+			fmt.Printf("%s ", aiColor("AI:"))
+
+			response := GetCompletion(userInput, nil, config.ApiKey)
+			fmt.Printf("%s\n\n", response.Content)
+		}
 	}
 }
