@@ -43,16 +43,23 @@ func NewConversationScreen() {
 	if m, ok := finalModel.(menus.Model); ok {
 		userInput := m.GetValue()
 		if userInput != "" {
-			// Display user message
-			userColor := color.New(color.FgCyan, color.Bold).SprintFunc()
-			fmt.Printf("\n%s %s\n\n", userColor("You:"), userInput)
-
 			// Send to OpenAI API and get response
 			aiColor := color.New(color.FgGreen, color.Bold).SprintFunc()
-			fmt.Printf("%s ", aiColor("AI:"))
+			fmt.Printf("%s ", aiColor("\nAI:\n"))
 
+			// Get response from OpenRouter API and render it.
 			response := GetCompletion(userInput, nil, config.ApiKey)
-			fmt.Printf("%s\n\n", response.Content)
+			renderer, err := CreateRenderer()
+			if err != nil {
+				panic(err)
+			}
+			rendered, err := renderer.Render(response.Content)
+			if err != nil {
+				panic(err)
+			}
+
+			// Print rendered content.
+			fmt.Printf("%s\n\n", rendered)
 		}
 	}
 }
