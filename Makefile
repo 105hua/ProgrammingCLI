@@ -1,4 +1,4 @@
-.PHONY: build clean run test test-verbose test-coverage test-coverage-report help
+.PHONY: build clean run test test-verbose test-coverage test-coverage-report docker-test docker-test-coverage docker-test-race docker-clean help
 
 # Binary name
 BINARY_NAME=ProgrammingCLI
@@ -52,6 +52,25 @@ test-coverage-report:
 	@go tool cover -html=coverage.out -o coverage.html
 	@echo Coverage report generated: coverage.html
 
+# Docker-based testing targets
+docker-test:
+	@echo Running tests in Docker container...
+	@docker compose run --rm test
+
+docker-test-coverage:
+	@echo Running tests with coverage in Docker container...
+	@docker compose run --rm test-coverage
+
+docker-test-race:
+	@echo Running tests with race detection in Docker container...
+	@docker compose run --rm test-race
+
+docker-clean:
+	@echo Cleaning Docker images and volumes...
+	@docker compose down -v
+	@docker rmi programmingcli-test 2>/dev/null || true
+	@echo Docker cleanup complete
+
 # Display help
 help:
 	@echo Available targets:
@@ -62,5 +81,9 @@ help:
 	@echo   test-verbose         - Run tests with verbose output
 	@echo   test-coverage        - Run tests with coverage statistics
 	@echo   test-coverage-report - Generate HTML coverage report
+	@echo   docker-test          - Run tests in Docker container
+	@echo   docker-test-coverage - Run tests with coverage in Docker
+	@echo   docker-test-race     - Run tests with race detection in Docker
+	@echo   docker-clean         - Clean Docker images and volumes
 	@echo   clean                - Remove build artifacts
 	@echo   help                 - Display this help message

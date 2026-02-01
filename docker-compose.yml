@@ -1,0 +1,39 @@
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    # Mount source code as volume for faster iterations during development
+    volumes:
+      - .:/app
+      - go-build-cache:/root/.cache/go-build
+      - go-mod-cache:/go/pkg/mod
+    # Override default command if needed
+    command: go test -v ./...
+    
+  # Run tests with coverage
+  test-coverage:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - .:/app
+      - go-build-cache:/root/.cache/go-build
+      - go-mod-cache:/go/pkg/mod
+    command: go test -coverprofile=coverage.out -v ./...
+    
+  # Run tests with race detection
+  test-race:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - .:/app
+      - go-build-cache:/root/.cache/go-build
+      - go-mod-cache:/go/pkg/mod
+    command: go test -race -v ./...
+
+# Named volumes for caching Go build and module downloads
+volumes:
+  go-build-cache:
+  go-mod-cache:
